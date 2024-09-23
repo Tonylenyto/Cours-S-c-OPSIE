@@ -1,21 +1,16 @@
 #!/bin/bash
 
 # Variables
-OCS_SERVER_URL="http://192.168.2.169:6080/inventory"  # l'URL du serveur OCS
+OCS_SERVER_URL="https://ocs.atlog.io/inventory"  # l'URL du serveur OCS
 ocs_basedir="/var/lib/ocsinventory-agent"
 ocs_configdir="/etc/ocsinventory"
 ocs_logfile="/var/log/ocsinventory-agent.log"
 INTERVAL="3600" # Intervalle d'exécution en secondes (1 heure = 3600 secondes)
 PLIST_FILE="/Library/LaunchDaemons/com.ocsinventory.agent.plist"
 AGENT_PATH="/usr/local/bin/ocsinventory-agent"
-AGENT_DOWNLOAD_URL="https://github.com/OCSInventory-NG/UnixAgent/releases/download/v2.10.2-MAC/Ocsinventory-Unix-Agent-2.10.2-MAC.tar.gz"
+AGENT_DOWNLOAD_URL="https://github.com/OCSInventory-NG/UnixAgent/archive/refs/tags/v2.10.2-MAC.tar.gz"
 TAG=""
 
-# Vérification des privilèges root
-if [ "$EUID" -ne 0 ]; then
-  echo "Ce script doit être exécuté avec des privilèges root (sudo)."
-  exit 1
-fi
 
 # Vérification de la présence de Homebrew
 if ! command -v brew &> /dev/null
@@ -34,6 +29,10 @@ then
 else
     echo "wget est déjà installé."
 fi
+
+ cpan -i IO::Socket::SSL XML::Simple Compress::Zlib Net::IP LWP::Protocol::https Proc::Daemon Proc::PID::File Net::SNMP Net::Netmask Nmap::Parser Module::Install Parse::EDID LWP::UserAgent
+
+
 
 # Vérification de la présence de l'agent OCS Inventory
 if [ ! -f "$AGENT_PATH" ]; then
