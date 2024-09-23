@@ -30,7 +30,18 @@ else
     echo "wget est déjà installé."
 fi
 
- cpan -i IO::Socket::SSL XML::Simple Compress::Zlib Net::IP LWP::Protocol::https Proc::Daemon Proc::PID::File Net::SNMP Net::Netmask Nmap::Parser Module::Install Parse::EDID LWP::UserAgent
+# Installation de nmap et d'autre dépendance si nécessaire (pour télécharger l'agent)
+    brew install nmap
+    brew install netmask
+    brew install make
+    brew install gcc
+    brew install net-tools
+    brew install pciutils
+    brew install smartmontools
+
+# Il faut creer un fonction pour ces dependance
+
+ cpan -i IO::Socket::SSL XML::Simple Compress::Zlib Net::IP LWP::Protocol::https LWP::Protocol::https::Socket Proc::Daemon Proc::PID::File Net::SNMP Net::Netmask Nmap::Parser Module::Install Parse::EDID LWP::UserAgent Mac::SysProfile Digest::MD5 Net::SSLeay
 
 
 
@@ -44,10 +55,10 @@ if [ ! -f "$AGENT_PATH" ]; then
     # Extraction et installation
     cd "/tmp"
     tar -xzf OCSNG_UNIX_SERVER.tar.gz
-    cd OCSNG_UNIX_SERVER-*
+    cd UnixAgent-*
     sudo env PERL_AUTOINSTALL=1 perl Makefile.PL
     sudo make
-    sudo make install --nowizard --server="${OCS_SERVER_URL}" --basevardir="${ocs_basedir}" --configdir="${ocs_configdir}" --tag="${TAG}" --logfile="${ocs_logfile}" --crontab --now  --remove-old-linux-agent --debug --download --snmp --nossl 
+    sudo make install 
 
 else
     echo "OCS Inventory Agent est déjà installé."
