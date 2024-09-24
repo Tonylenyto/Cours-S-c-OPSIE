@@ -1,7 +1,14 @@
 #!/bin/bash
 
 # Variables
-OCS_SERVER_URL="https://votre-serveur-ocs/inventory"
+OCS_SERVER_URL="https://ocs.atlog.io/inventory"
+TAG=""
+ocs_basedir="/var/lib/ocsinventory-agent"
+ocs_configdir="/etc/ocsinventory"
+ocs_logfile="/var/log/ocsinventory-agent.log"
+
+# Modules Spécifique macOS
+
 PERL_MODULES_REQUIRED=(
     "XML::Simple"
     "Compress::Zlib"
@@ -10,7 +17,7 @@ PERL_MODULES_REQUIRED=(
     "Digest::MD5"
     "Net::SSLeay"
     "Data::UUID"
-    "Mac::SysProfile"  # Spécifique macOS
+    "Mac::SysProfile"  
 )
 
 PERL_MODULES_RECOMMENDED=(
@@ -61,7 +68,8 @@ fi
 # Détection du système d'exploitation
 OS_TYPE=$(uname)
 
-# Fonction pour installer les paquets sous Debian-like Linux
+# Fonction pour installer les paquets sous Debian/Linux
+
 install_on_linux() {
   echo "Système d'exploitation : Linux"
 
@@ -103,6 +111,7 @@ install_on_macos() {
   if ! perl -v | grep "v5.8" &> /dev/null; then
       echo "Installation de Perl 5.8 et des dépendances..."
       brew install perl
+      brew install xz
   else
       echo "Perl est déjà installé."
   fi
@@ -128,15 +137,19 @@ install_on_macos() {
 }
 
 # Fonction pour installer l'agent OCS Inventory
+
 install_ocs_agent() {
   AGENT_PATH="/usr/local/bin/ocsinventory-agent"
   if [ ! -f "$AGENT_PATH" ]; then
       echo "Téléchargement et installation de l'agent OCS Inventory..."
-      wget -O /tmp/OCSNG_UNIX_SERVER.tar.gz https://github.com/OCSInventory-NG/UnixAgent/releases/download/v2.9.0/OCSNG_UNIX_SERVER-2.9.0.tar.gz
+      wget -O /tmp/OCSNG_UNIX_SERVER.tar.gz https://github.com/OCSInventory-NG/UnixAgent/archive/refs/tags/v2.10.2-MAC.tar.gz
       cd /tmp
       tar -xzf OCSNG_UNIX_SERVER.tar.gz
-      cd OCSNG_UNIX_SERVER-*
-      sudo ./setup.sh
+      cd UnixAgent-*
+      sudo env PERL_AUTOINSTALL=1 perl Makefile.PL
+      sudo make
+      sudo make install 
+       sudo perl postinst.pl --nowizard --server="${OCS_SERVER_UR}" --basevardir="${ocs_basedir}" --configdir="${ocs_configdir}" --tag="${TAG}" --logfile="${ocs_logfile}" --crontab --now  --debug --download --snmp --nossl
   else
       echo "L'agent OCS Inventory est déjà installé."
   fi
@@ -156,5 +169,4 @@ fi
 install_ocs_agent
 
 # Finalisation
-echo "Toutes les dépendances et modules requis sont installés."
-echo "Vous pouvez maintenant exécuter l'agent OCS Inventory."
+echo "END! END! END!"
