@@ -32,7 +32,7 @@ function usage
     printf '\033[1m'"SYNOPSYS"'\033[0m\n'
     printf "\t%s [-h]\n" "$cmd"
     printf '\033[1m'"DESCRIPTION"'\033[0m\n'
-    printf "\tce script permet l'installation d'OCS Inventory Agent sur un système d'exploitation LMacOS\n" 
+    printf "\tce script permet l'installation d'OCS Inventory Agent sur un système d'exploitation MacOS\n" 
     printf "\t.............................\n"
     printf '\033[1m'"OPTION"'\033[0m\n'
     printf "\t-h     --help			 afficher ce message\n"
@@ -55,6 +55,7 @@ function usage
 if [[ $DEBUG == 1 ]] ; then
     set -x
 else
+
     set +x
 fi
 
@@ -68,88 +69,9 @@ function showversion
 }
 
 
-# Modules Spécifique macOS
-
-PERL_MODULES_REQUIRED=(
-    "XML::Simple"
-    "Compress::Zlib"
-    "Net::IP"
-    "LWP::UserAgent"
-    "Digest::MD5"
-    "Net::SSLeay"
-    "Data::UUID"
-    "Mac::SysProfile"  
-)
-
-PERL_MODULES_RECOMMENDED=(
-    "IO::Socket::SSL"
-    "Crypt::SSLeay"
-    "LWP::Protocol::https"
-    "Proc::Daemon"
-    "Proc::PID::File"
-    "Net::SNMP"
-    "Net::Netmask"
-    "Nmap::Parser"
-    "Module::Install"
-    "Net::CUPS"
-    "Parse::EDID"
-)
-
-LINUX_PACKAGES_REQUIRED=(
-    "libmodule-install-perl"
-    "dmidecode"
-    "libxml-simple-perl"
-    "libcompress-zlib-perl"
-    "libnet-ip-perl"
-    "libwww-perl"
-    "libdigest-md5-perl"
-    "libdata-uuid-perl"
-)
-
-LINUX_PACKAGES_RECOMMENDED=(
-    "libcrypt-ssleay-perl"
-    "libnet-snmp-perl"
-    "libproc-pid-file-perl"
-    "libproc-daemon-perl"
-    "net-tools"
-    "libsys-syslog-perl"
-    "pciutils"
-    "smartmontools"
-    "read-edid"
-    "nmap"
-    "libnet-netmask-perl"
-)
-
-# Vérification des privilèges root
-#if [ "$EUID" -ne 0 ]; then
-#  echo "Ce script doit être exécuté avec des privilèges root (sudo)."
-#  exit 1
-#fi
-
-# Détection du système d'exploitation
-OS_TYPE=$(uname)
-
-# Fonction pour installer les paquets sous Debian/Linux
-
-install_on_linux() {
-  echo "Système d'exploitation : Linux"
-
-  # Mise à jour des paquets
-  echo "Mise à jour des dépôts apt..."
-  sudo apt update
-
-  # Installation des paquets requis pour Linux
-  echo "Installation des paquets requis..."
-  sudo apt install -y "${LINUX_PACKAGES_REQUIRED[@]}"
-
-  # Installation des paquets recommandés pour Linux
-  echo "Installation des paquets recommandés..."
-  sudo apt install -y "${LINUX_PACKAGES_RECOMMENDED[@]}"
-}
-
 # Fonction pour installer les paquets et modules sous macOS
-install_on_macos() {
-  echo "Système d'exploitation : macOS"
+
+install_on_macos {
 
   # Vérification de la présence de Homebrew
   if ! command -v brew &> /dev/null
@@ -164,10 +86,9 @@ install_on_macos() {
   echo "Mise à jour des paquets Homebrew..."
   brew update
 
-
   # Installation des utilitaires requis
-  echo "Installation des utilitaires requis (gcc, make, pciutils, nmap, cron, cups, xz)..."
-  brew install gcc make pciutils nmap cron cups xz
+  echo "Installation des utilitaires requis (gcc, make, pciutils, nmap, cron, cups, xz, yaml-cpp)..."
+  brew install gcc make pciutils nmap cron cups xz yaml-cpp
 
   # Vérification et installation de Perl via Homebrew (si nécessaire)
   if ! perl -v | grep "v5.8" &> /dev/null; then
@@ -182,29 +103,32 @@ install_on_macos() {
   cpan App::cpanminus
   cpan install CPAN
 
-  # Installation des modules Perl requis
-  echo "Installation des modules Perl requis..."
-  for module in "${PERL_MODULES_REQUIRED[@]}"; do
-      echo "Installation du module Perl: $module..."
-      cpan install "$module"
-  done
-
   # Installation des modules Perl recommandés
   echo "Installation des modules Perl recommandés..."
-  for module in "${PERL_MODULES_RECOMMENDED[@]}"; do
-      echo "Installation du module Perl: $module..."
-      cpan install "$module"
-  done
+  installRequirement 
 }
+
+# Fonction d'installation des modules Perl recommandés
+
+function installRequirement 
+{
+
+     
+  cpan -i IO::Socket::SSL XML::Simple Compress::Zlib Net::IP LWP::Protocol::https Proc::Daemon Proc::PID::File Net::SNMP Net::Netmask Nmap::Parser Module::Install Parse::EDID LWP::UserAgent
+
+
+}
+
 
 # Fonction pour installer l'agent OCS Inventory
 
-install_ocs_agent() {
+install_ocs_agent {
   AGENT_PATH="/usr/local/bin/ocsinventory-agent"
   if [ ! -f "$AGENT_PATH" ]; then
       echo "Téléchargement et installation de l'agent OCS Inventory..."
       wget -O /tmp/OCSNG_UNIX_SERVER.tar.gz https://github.com/OCSInventory-NG/UnixAgent/archive/refs/tags/v${VERSION_MAC_AGENT}-MAC.tar.gz
       cd /tmp
+
       tar -xzf OCSNG_UNIX_SERVER.tar.gz
       cd UnixAgent-*
       sudo env PERL_AUTOINSTALL=1 perl Makefile.PL
@@ -271,27 +195,27 @@ SECONDS=0
 ###############                       MAIN                       ###############
 ################################################################################
 
-# Lancement de l'installation en fonction de l'OS
-if [[ "$OS_TYPE" == "Linux" ]]; then
-  install_on_linux
-elif [[ "$OS_TYPE" == "Darwin" ]]; then
-  install_on_macos
-else
-  echo "Système d'exploitation non supporté."
-  exit 1
-fi
+
 
 # Installation de l'agent OCS Inventory
+install_on_macos
 install_ocs_agent
 Nettoyage
+
+
+
+
+
+################################################################################
+###############                   FIN DU SCRIPT                  ###############
+################################################################################
+
 
 # Fin
 echo "Enjoy !!"
 echo "END! END! END!"
 
-################################################################################
-###############                   FIN DU SCRIPT                  ###############
-################################################################################
+
 
 printInfos
 printErrors
