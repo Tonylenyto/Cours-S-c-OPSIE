@@ -109,7 +109,6 @@ function install_ocs_agent {
       sudo env PERL_AUTOINSTALL=1 perl Makefile.PL
       sudo make
       sudo make install 
-      sudo 
       sudo perl postinst.pl --nowizard --server="${OCS_SERVER_URL}" --basevardir="${ocs_basedir}" --configdir="${ocs_configdir}" --tag="${TAG}" --logfile="${ocs_logfile}" --crontab --now --lazy --debug --download --snmp --nossl
 
 }
