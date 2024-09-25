@@ -1,15 +1,5 @@
 #!/bin/bash
 
-nb_arg=$#
-cmd=$0
-cmdLine=$@
-
-DATE=$(date +%Y%m%d_%H%M)
-WARN_MSG_ARRAY=()
-INFO_MSG_ARRAY=()
-SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-
-
 ################################################################################
 ############     Déclaration des variables spécifiques au script    ############
 ################################################################################
@@ -49,15 +39,6 @@ function usage
 ###############        Fonctions et traitements générique        ###############
 ################################################################################
 
-# gestion du passage en mode debug
-# pour passer en mode DEBUG lancer "export DEBUG=1" avant de lancer le script
-
-if [[ $DEBUG == 1 ]] ; then
-    set -x
-else
-
-    set +x
-fi
 
 function ocsAgentVersion {
     printf "\tversion-agent : %s\n" "$VERSION_MAC_AGENT"
@@ -71,7 +52,7 @@ function showversion
 
 # Fonction pour installer les paquets et modules sous macOS
 
-install_on_macos {
+function install_on_macos  {
 
   # Vérification de la présence de Homebrew
   if ! command -v brew &> /dev/null
@@ -88,7 +69,7 @@ install_on_macos {
 
   # Installation des utilitaires requis
   echo "Installation des utilitaires requis (gcc, make, pciutils, nmap, cron, cups, xz, yaml-cpp)..."
-  brew install gcc make pciutils nmap cron cups xz yaml-cpp
+  brew install wget gcc make nmap cron cups xz yaml-cpp
 
   # Vérification et installation de Perl via Homebrew (si nécessaire)
   if ! perl -v | grep "v5.8" &> /dev/null; then
@@ -102,10 +83,6 @@ install_on_macos {
   echo "Mise à jour des modules CPAN..."
   cpan App::cpanminus
   cpan install CPAN
-
-  # Installation des modules Perl recommandés
-  echo "Installation des modules Perl recommandés..."
-  installRequirement 
 }
 
 # Fonction d'installation des modules Perl recommandés
@@ -122,22 +99,19 @@ function installRequirement
 
 # Fonction pour installer l'agent OCS Inventory
 
-install_ocs_agent {
-  AGENT_PATH="/usr/local/bin/ocsinventory-agent"
-  if [ ! -f "$AGENT_PATH" ]; then
+function install_ocs_agent {
+
       echo "Téléchargement et installation de l'agent OCS Inventory..."
       wget -O /tmp/OCSNG_UNIX_SERVER.tar.gz https://github.com/OCSInventory-NG/UnixAgent/archive/refs/tags/v${VERSION_MAC_AGENT}-MAC.tar.gz
       cd /tmp
-
       tar -xzf OCSNG_UNIX_SERVER.tar.gz
       cd UnixAgent-*
       sudo env PERL_AUTOINSTALL=1 perl Makefile.PL
       sudo make
       sudo make install 
-      sudo perl postinst.pl --nowizard --server="${OCS_SERVER_UR}" --basevardir="${ocs_basedir}" --configdir="${ocs_configdir}" --tag="${TAG}" --logfile="${ocs_logfile}" --crontab --now --lazy --debug --download --snmp --nossl
-  else
-      echo "L'agent OCS Inventory est déjà installé."
-  fi
+      sudo 
+      sudo perl postinst.pl --nowizard --server="${OCS_SERVER_URL}" --basevardir="${ocs_basedir}" --configdir="${ocs_configdir}" --tag="${TAG}" --logfile="${ocs_logfile}" --crontab --now --lazy --debug --download --snmp --nossl
+
 }
 
      
@@ -199,28 +173,11 @@ SECONDS=0
 
 # Installation de l'agent OCS Inventory
 install_on_macos
+installRequirement 
 install_ocs_agent
 Nettoyage
 
 
-
-
-
-################################################################################
-###############                   FIN DU SCRIPT                  ###############
-################################################################################
-
-
-# Fin
-echo "Enjoy !!"
-echo "END! END! END!"
-
-
-
-printInfos
-printErrors
-
-# décommenter les 2 lignes ci-dessous pour afficher la durée du script
 ELAPSED="Durée de $0 ..... : "$(($SECONDS / 3600))"h"$((($SECONDS / 60) % 60))"m "$(($SECONDS % 60))"sec"
 echo $ELAPSED
 
